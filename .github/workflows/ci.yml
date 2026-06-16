@@ -1,0 +1,164 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 2 * * *' # 2:00 AM UTC every day
+  workflow_dispatch: # lets you trigger manually from GitHub UI anytime
+
+jobs:
+  test:
+    name: Playwright E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      BASE_URL: ${{ secrets.BASE_URL }}
+      API_URL: ${{ secrets.API_URL }}
+      ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      USER_EMAIL: ${{ secrets.USER_EMAIL }}
+      USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
+      TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+      # Runner settings
+      HEADLESS: true
+      SLOW_MO: 0
+      WORKERS: 2
+      RETRIES: 2
+      TRACE: on-first-retry
+      VIDEO: retain-on-failure
+      SCREENSHOT: only-on-failure
+      DEFAULT_TIMEOUT_MS: 20000
+      NAVIGATION_TIMEOUT_MS: 40000
+      EXPECT_TIMEOUT_MS: 15000
+      LOG_LEVEL: info
+      DEBUG_PROTOCOL: false
+      TRACE_NETWORK: false
+      E2E_PAUSE_AFTER_TEST: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: npm run test:ci
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: reports/
+          retention-days: 14
+
+      - name: Build Slack failure payload
+        if: failure()
+        env:
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          PROJECT_NAME: ${{ vars.PROJECT_NAME || 'E2E' }}
+        run: |
+          node << 'NODEOF'
+          const fs = require('fs');
+          const resultsPath = 'reports/playwright-report/results.json';
+          const projectName = process.env.PROJECT_NAME || 'E2E';
+
+          const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+          const artifactsUrl = `${runUrl}#artifacts`;
+          const refName = process.env.GITHUB_REF_NAME;
+          const eventName = process.env.GITHUB_EVENT_NAME;
+
+          let summary = 'Results unavailable';
+          let failureText = ':warning: Test result JSON was not generated — check the CI logs directly.';
+          let failureCount = 0;
+
+          if (fs.existsSync(resultsPath)) {
+            const data = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
+            const stats = data.stats || {};
+            const total = (stats.expected || 0) + (stats.unexpected || 0) + (stats.flaky || 0) + (stats.skipped || 0);
+            summary = `${stats.unexpected || 0} failed · ${stats.expected || 0} passed · ${stats.skipped || 0} skipped · ${total} total`;
+
+            const failures = [];
+            function walk(suites, parentFile) {
+              for (const s of (suites || [])) {
+                const file = parentFile || s.file || s.title || 'unknown';
+                for (const spec of (s.specs || [])) {
+                  for (const test of (spec.tests || [])) {
+                    if (test.status === 'unexpected') {
+                      const last = test.results[test.results.length - 1];
+                      const rawMsg = (last && last.error && last.error.message) || 'No error message';
+                      const msg = rawMsg.split('\n')[0].slice(0, 200);
+                      failures.push({ file, title: spec.title, msg });
+                    }
+                  }
+                }
+                walk(s.suites, file);
+              }
+            }
+            walk(data.suites);
+
+            failureCount = failures.length;
+            if (failures.length > 0) {
+              const top = failures.slice(0, 5);
+              const lines = top.map(f => `• *${f.title}*\n  \`${f.file}\`\n  ${f.msg}`);
+              if (failures.length > 5) lines.push(`_...and ${failures.length - 5} more_`);
+              failureText = lines.join('\n\n');
+            } else {
+              failureText = ':warning: Tests marked as failed but no specific failure details found.';
+            }
+          }
+
+          const payload = {
+            text: `:red_circle: ${projectName} E2E Tests Failed`,
+            blocks: [
+              {
+                type: 'header',
+                text: { type: 'plain_text', text: `:red_circle: ${projectName} E2E Tests Failed`, emoji: true }
+              },
+              {
+                type: 'section',
+                fields: [
+                  { type: 'mrkdwn', text: `*Branch:*\n\`${refName}\`` },
+                  { type: 'mrkdwn', text: `*Triggered by:*\n${eventName}` },
+                  { type: 'mrkdwn', text: `*Results:*\n${summary}` },
+                  { type: 'mrkdwn', text: `*Report:*\n<${artifactsUrl}|Download HTML Report>` }
+                ]
+              },
+              { type: 'divider' },
+              {
+                type: 'section',
+                text: { type: 'mrkdwn', text: `*Failed Tests (${failureCount}):*\n\n${failureText}` }
+              }
+            ]
+          };
+
+          fs.writeFileSync('slack-payload.json', JSON.stringify(payload));
+          console.log(`Payload written — ${failureCount} failure(s) included`);
+          NODEOF
+
+      - name: Notify Slack on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload-file-path: slack-payload.json
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

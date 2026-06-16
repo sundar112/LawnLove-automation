@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Environments
+.env
+.env.local
+.env.*.local
+
+# Cached auth state (per-role storageState files)
+auth/*.storage.json
+auth/*.token
+
+# Playwright MCP browser session artifacts
+.playwright-mcp/
+
+# Test artifacts and reports
+reports/
+test-results/
+playwright-report/
+allure-results/
+allure-report/
+.last-run.json
+
+# Build / TS incremental
+dist/
+build/
+*.tsbuildinfo
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Temp files
+*.tmp
+*.temp
+.tmp/
+.cache/
+
+# Local test state
+test-state/
