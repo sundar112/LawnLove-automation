@@ -1,5 +1,10 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
+
+// Load .env from the project root (two levels up from src/config/), not the
+// current working directory — so tests can be launched from any folder.
+dotenv.config({ path: fileURLToPath(new URL('../../.env', import.meta.url)) });
 
 /**
  * Zod-validated environment loader. Throws a readable error listing every
@@ -47,6 +52,7 @@ const EnvSchema = z.object({
   NAVIGATION_TIMEOUT_MS: positiveInt,
   EXPECT_TIMEOUT_MS: positiveInt,
 
+  TAGS: z.string().optional().default(''),
   LOG_LEVEL: logLevelEnum.default('info'),
 
   DEBUG_PROTOCOL: boolean.default(false),
