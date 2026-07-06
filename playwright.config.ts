@@ -84,5 +84,26 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
       },
     },
+
+    // ── Cross-browser (public flows only for now) ────────────────────────
+    // Logged-in flows stay Chromium-only; storageState files are browser-
+    // independent, so copying these blocks with storagePath('<role>') is all
+    // it takes to extend a role to another browser.
+    {
+      name: 'firefox-public',
+      testIgnore: /auth\.setup\.ts/,
+      grep: /@as-public\b/,
+      use: {
+        ...devices['Desktop Firefox'],
+      },
+    },
+    {
+      name: 'webkit-public',
+      testIgnore: /auth\.setup\.ts/,
+      grep: /@as-public\b/,
+      use: {
+        ...devices['Desktop Safari'],
+      },
+    },
   ],
 });

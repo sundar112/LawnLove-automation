@@ -75,9 +75,44 @@ npm run codegen       # opens browser as logged-in user
 | `npm run lint:no-sleeps`  | Check banned patterns (sleeps, hardcoded creds) |
 | `npm run format:check`    | Verify Prettier formatting                      |
 
+## Browser coverage
+
+**Public (no-auth) flows run cross-browser: Chromium, Firefox, and WebKit.** Logged-in
+(user/admin) flows run Chromium-only to keep runs fast — by design, not oversight.
+
+Requires the browsers installed locally (one-time): `npx playwright install firefox webkit`
+
+Run a single browser with `--project`:
+
+```bash
+npx playwright test --project=chromium-public
+npx playwright test --project=firefox-public
+npx playwright test --project=webkit-public
+```
+
+`npm test` / `npm run test:smoke` run all matching projects, so every `@as-public` test executes
+once per browser. Note: WebKit here is Playwright's own build — the closest Safari proxy available
+on Windows/Linux, but not identical to real macOS Safari.
+
+To extend a logged-in role to another browser, copy its project block in `playwright.config.ts`
+with the new device (storageState files are browser-independent):
+
+```ts
+{
+  name: 'firefox-user',
+  testIgnore: /auth\.setup\.ts/,
+  grep: /@as-user\b/,
+  dependencies: ['setup'],
+  use: { ...devices['Desktop Firefox'], storageState: storagePath('user') },
+},
+```
+
+Each browser added multiplies test time, so consider running extra browsers only on the nightly
+scheduled run rather than every PR.
+
 ## CI/CD
 
-The GitHub Actions workflow (`.github/workflows/ci.yml`) runs on push to `main`, pull requests, and daily at 2 AM UTC. Quality gates (lint, typecheck, grep-bans) run first — the E2E tests only run if they pass.
+The GitHub Actions workflow (`.github/workflows/ci.yml`) runs on pushes and pull requests to `master` and `develop`. It currently runs the quality gates only (lint, typecheck, grep-bans) — **the E2E steps are temporarily commented out** while automation runs locally. Re-enable instructions are at the top of the workflow file; the secrets below are only needed once E2E is re-enabled.
 
 Required GitHub secrets:
 
