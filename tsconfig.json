@@ -35,5 +35,5 @@
     "types": ["node"]
   },
   "include": ["src/**/*.ts", "src/**/*.json", "scripts/**/*.ts", "playwright.config.ts"],
-  "exclude": ["node_modules", "reports", "dist", "build"]
+  "exclude": ["node_modules", "reports", "dist", "build", "scripts/recorded-flow.ts"]
 }

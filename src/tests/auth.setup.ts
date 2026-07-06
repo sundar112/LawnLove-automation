@@ -31,10 +31,12 @@ setup('site reachable', async ({ page }) => {
 });
 
 for (const role of ROLES) {
+  const persona = personaFor(role);
+  if (!persona) continue; // skip roles whose credentials are not set in .env
+
   setup(`authenticate as ${role}`, async ({ page, baseURL }) => {
     expect(baseURL, 'baseURL must be configured in playwright.config.ts').toBeTruthy();
 
-    const persona = personaFor(role);
     log.info({ role }, 'authenticating');
 
     // ── Adapt this block to your app's login UI ──────────────────────────

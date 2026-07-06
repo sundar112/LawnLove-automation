@@ -10,7 +10,8 @@ const SCAN_DIRS = ['src'];
 const BAN_RULES = [
   {
     id: 'no-waitForTimeout',
-    description: 'page.waitForTimeout() / sleep / setTimeout banned. Use auto-retrying expect() instead.',
+    description:
+      'page.waitForTimeout() / sleep / setTimeout banned. Use auto-retrying expect() instead.',
     pattern: /\b(waitForTimeout|setTimeout)\s*\(/g,
     skipFiles: [
       // Allowed only inside the retry helper (sole controlled use).

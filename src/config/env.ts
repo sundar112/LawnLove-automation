@@ -28,13 +28,13 @@ const EnvSchema = z.object({
   BASE_URL: z.url('BASE_URL must be a valid URL (e.g. http://localhost:3000)'),
   API_URL: z.url('API_URL must be a valid URL'),
 
-  ADMIN_EMAIL: z.string().min(1, 'ADMIN_EMAIL is required'),
-  ADMIN_PASSWORD: z.string().min(1, 'ADMIN_PASSWORD is required'),
-  USER_EMAIL: z.string().min(1, 'USER_EMAIL is required'),
-  USER_PASSWORD: z.string().min(1, 'USER_PASSWORD is required'),
+  /** Required for role-based tests; optional when running public-only suites. */
+  USER_EMAIL: z.string().optional().default(''),
+  USER_PASSWORD: z.string().optional().default(''),
 
-  /** Password used when creating ephemeral test accounts in registration specs. */
-  TEST_PASSWORD: z.string().min(8).default('Passwd@RunTest1'),
+  /** Optional — only needed if the app has an admin role. Leave blank to skip admin auth setup. */
+  ADMIN_EMAIL: z.string().optional().default(''),
+  ADMIN_PASSWORD: z.string().optional().default(''),
 
   HEADLESS: boolean,
   SLOW_MO: positiveInt,
@@ -47,7 +47,6 @@ const EnvSchema = z.object({
   NAVIGATION_TIMEOUT_MS: positiveInt,
   EXPECT_TIMEOUT_MS: positiveInt,
 
-  TAGS: z.string().optional().default(''),
   LOG_LEVEL: logLevelEnum.default('info'),
 
   DEBUG_PROTOCOL: boolean.default(false),
