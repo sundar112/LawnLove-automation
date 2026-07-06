@@ -13,17 +13,15 @@ export interface Persona {
   password: string;
 }
 
-export const PERSONAS: Record<RoleKey, Persona> = {
-  admin: {
-    role: 'admin',
-    email: env.ADMIN_EMAIL,
-    password: env.ADMIN_PASSWORD,
-  },
+export const PERSONAS: Partial<Record<RoleKey, Persona>> = {
   user: {
     role: 'user',
     email: env.USER_EMAIL,
     password: env.USER_PASSWORD,
   },
+  ...(env.ADMIN_EMAIL && env.ADMIN_PASSWORD
+    ? { admin: { role: 'admin', email: env.ADMIN_EMAIL, password: env.ADMIN_PASSWORD } }
+    : {}),
 };
 
-export const personaFor = (role: RoleKey): Persona => PERSONAS[role];
+export const personaFor = (role: RoleKey): Persona | undefined => PERSONAS[role];

@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { test, type Page } from '@playwright/test';
 import { ExamplePage } from '../pages/example.page';
 
 /**
@@ -15,28 +15,22 @@ import { ExamplePage } from '../pages/example.page';
  *   test:<feature>:regression
  */
 
-async function goToExamplePage(page: import('@playwright/test').Page): Promise<ExamplePage> {
+async function goToExamplePage(page: Page): Promise<ExamplePage> {
   const examplePage = new ExamplePage(page);
   await examplePage.goto();
   return examplePage;
 }
 
 test.describe('Example Feature', () => {
-  test(
-    'should load the example page @smoke @as-user',
-    async ({ page }) => {
-      const examplePage = await goToExamplePage(page);
-      await examplePage.waitForLoaded();
-    },
-  );
+  test('should load the example page @smoke @as-user', async ({ page }) => {
+    const examplePage = await goToExamplePage(page);
+    await examplePage.waitForLoaded();
+  });
 
-  test(
-    'should submit the example form successfully @regression @as-user',
-    async ({ page }) => {
-      const examplePage = await goToExamplePage(page);
-      await examplePage.fillName('Test User');
-      await examplePage.submit();
-      await examplePage.expectSuccessBanner();
-    },
-  );
+  test('should submit the example form successfully @regression @as-user', async ({ page }) => {
+    const examplePage = await goToExamplePage(page);
+    await examplePage.fillName('Test User');
+    await examplePage.submit();
+    await examplePage.expectSuccessBanner();
+  });
 });

@@ -15,6 +15,9 @@ auth/*.token
 # Playwright MCP browser session artifacts
 .playwright-mcp/
 
+# Codegen output — overwritten by every recording, never committed
+scripts/recorded-flow.ts
+
 # Test artifacts and reports
 reports/
 test-results/

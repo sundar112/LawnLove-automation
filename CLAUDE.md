@@ -22,6 +22,7 @@ When asked to automate any new feature flow, always use the codegen-first approa
 **Why:** Guessing locators from source alone leads to mismatches. Recording live interaction captures exact selectors and surfaces `{ force: true }` / `{ exact: true }` requirements upfront.
 
 The user will trigger this by saying things like:
+
 - "automate the [feature] flow"
 - "add automation for [feature]"
 - "recreate the [feature] automation"
@@ -33,14 +34,30 @@ The user will trigger this by saying things like:
 - Test tags: `@smoke` (happy path, fast), `@regression` (full flow end-to-end), `@as-user` / `@as-admin` / `@as-public`
 - Each new spec gets 4 matching scripts in `package.json`: `test:<feature>`, `test:<feature>:headed`, `test:<feature>:smoke`, `test:<feature>:regression`
 - Shared setup goes in a `goTo<Feature>Page(page: Page)` helper at the top of the spec file
+- Page-object assertion helpers must be named `expect*` (e.g. `expectUrl`, `expectToast`) — the
+  `playwright/expect-expect` lint rule only recognizes `expect*` and `waitForLoaded` as assertions
+- Never assert hardcoded hosts (`toHaveURL(/localhost:3001/)`) — assert paths (`expectUrl(/\/$/)`)
+  so specs work against any environment
+
+## Quality Gates
+
+Every commit must pass all four (run them before committing):
+
+```bash
+npm run typecheck && npm run lint && npm run lint:no-sleeps && npm run format:check
+```
+
+- Pre-commit hook (`.husky/pre-commit`) runs `lint-staged` (Prettier) + grep-bans automatically
+- CI runs lint, typecheck, and grep-bans before the tests — a lint failure fails the pipeline
+- Line endings are LF everywhere, enforced by `.gitattributes` (`eol=lf`) — do not commit CRLF
 
 ## Roles
 
-| Role    | Tag          | Storage file              | Env vars                          |
-|---------|--------------|---------------------------|-----------------------------------|
-| admin   | `@as-admin`  | `auth/admin.storage.json` | `ADMIN_EMAIL`, `ADMIN_PASSWORD`   |
-| user    | `@as-user`   | `auth/user.storage.json`  | `USER_EMAIL`, `USER_PASSWORD`     |
-| public  | `@as-public` | (none — no auth needed)   | (none)                            |
+| Role   | Tag          | Storage file              | Env vars                        |
+| ------ | ------------ | ------------------------- | ------------------------------- |
+| admin  | `@as-admin`  | `auth/admin.storage.json` | `ADMIN_EMAIL`, `ADMIN_PASSWORD` |
+| user   | `@as-user`   | `auth/user.storage.json`  | `USER_EMAIL`, `USER_PASSWORD`   |
+| public | `@as-public` | (none — no auth needed)   | (none)                          |
 
 To add a new role: extend `src/config/roles.ts`, add credentials to `.env.example` + `.env`,
 add a persona in `src/fixtures/personas.ts`, and add a project in `playwright.config.ts`.

@@ -19,6 +19,7 @@ Make sure you have these installed before starting:
 Do **not** clone this repo. Instead, copy the entire template folder to a new location.
 
 **Example:**
+
 ```
 From: C:\Users\D E L L\OneDrive\Desktop\Playwrite template
 To:   C:\Users\D E L L\OneDrive\Desktop\MyProject-automation
@@ -100,6 +101,7 @@ npm run codegen:public
 ```
 
 A browser opens. Do this:
+
 1. Navigate to your app's login page
 2. Type your email and password
 3. Click the login / sign in button
@@ -123,6 +125,7 @@ await page.waitForURL('**/dashboard');
 Open `src/tests/auth.setup.ts`. Find the block marked `Adapt this block to your app's login UI` and replace it with the selectors from the recording:
 
 **Before (template placeholder):**
+
 ```ts
 await page.goto('/login');
 await page.getByLabel(/email/i).fill(persona.email);
@@ -132,12 +135,13 @@ await page.waitForURL(/\/(dashboard|home|app)/, { timeout: 30_000 });
 ```
 
 **After (your app's actual selectors from recording):**
+
 ```ts
 await page.goto('/login');
-await page.getByLabel('Email address').fill(persona.email);   // exact label from recording
+await page.getByLabel('Email address').fill(persona.email); // exact label from recording
 await page.getByLabel('Password').fill(persona.password);
 await page.getByRole('button', { name: 'Sign in' }).click();
-await page.waitForURL('**/dashboard', { timeout: 30_000 });   // exact URL pattern from recording
+await page.waitForURL('**/dashboard', { timeout: 30_000 }); // exact URL pattern from recording
 ```
 
 > Keep `persona.email` and `persona.password` — do not hardcode credentials here.
@@ -151,6 +155,7 @@ npx playwright test src/tests/auth.setup.ts --project=setup
 ```
 
 Expected output:
+
 ```
 ✓  site reachable
 ✓  authenticate as admin
@@ -158,6 +163,7 @@ Expected output:
 ```
 
 If it passes, two files are created:
+
 - `auth/admin.storage.json`
 - `auth/user.storage.json`
 
@@ -227,20 +233,20 @@ If you want CI to run your tests automatically on every push:
 2. Go to **Settings → Secrets and variables → Actions**
 3. Add these repository secrets:
 
-| Secret | Value |
-|--------|-------|
-| `BASE_URL` | Your app's URL |
-| `API_URL` | Your app's API URL |
-| `ADMIN_EMAIL` | Admin user email |
-| `ADMIN_PASSWORD` | Admin user password |
-| `USER_EMAIL` | Regular user email |
-| `USER_PASSWORD` | Regular user password |
+| Secret              | Value                                             |
+| ------------------- | ------------------------------------------------- |
+| `BASE_URL`          | Your app's URL                                    |
+| `API_URL`           | Your app's API URL                                |
+| `ADMIN_EMAIL`       | Admin user email                                  |
+| `ADMIN_PASSWORD`    | Admin user password                               |
+| `USER_EMAIL`        | Regular user email                                |
+| `USER_PASSWORD`     | Regular user password                             |
 | `SLACK_WEBHOOK_URL` | Slack webhook URL (optional — for failure alerts) |
 
 4. Go to **Settings → Variables → Actions** and add:
 
-| Variable | Value |
-|----------|-------|
+| Variable       | Value                                |
+| -------------- | ------------------------------------ |
 | `PROJECT_NAME` | Your project name (e.g. `MyProject`) |
 
 The workflow at `.github/workflows/ci.yml` will run automatically on every push to `main`.
@@ -281,11 +287,13 @@ npm run report
 If your app has more than admin and user roles:
 
 1. **`src/config/roles.ts`** — add to ROLES array:
+
    ```ts
    export const ROLES = ['admin', 'user', 'manager'] as const;
    ```
 
 2. **`.env.example` and `.env`** — add credentials:
+
    ```env
    MANAGER_EMAIL=
    MANAGER_PASSWORD=
@@ -294,6 +302,7 @@ If your app has more than admin and user roles:
 3. **`src/config/env.ts`** — add env vars to the Zod schema (follow the existing `ADMIN_EMAIL` pattern)
 
 4. **`src/fixtures/personas.ts`** — add persona:
+
    ```ts
    manager: {
      role: 'manager',
@@ -303,6 +312,7 @@ If your app has more than admin and user roles:
    ```
 
 5. **`playwright.config.ts`** — add project:
+
    ```ts
    {
      name: 'chromium-manager',
@@ -348,6 +358,7 @@ Then open `.env` and fill in `BASE_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `USER_
 **"Login page unreachable — check BASE_URL"**
 
 The `site reachable` test failed. Causes:
+
 - `BASE_URL` in `.env` has a typo (e.g. missing `https://`, extra trailing slash)
 - The app is not running — start it first, then run auth setup
 - The app is behind a VPN — connect to VPN first
@@ -368,6 +379,7 @@ The selector in `auth.setup.ts` does not match your app's login form.
 4. Copy the exact `fill` and `click` lines into `auth.setup.ts`
 
 Common mismatches:
+
 - App uses `placeholder="Email address"` but selector is `getByLabel('Email')` — use `getByPlaceholder('Email address', { exact: true })` instead
 - App uses a custom input component not tied to a `<label>` — use `getByTestId(...)` or `getByPlaceholder(...)`
 - Login form is inside a modal/dialog — scope the locator: `page.getByRole('dialog').getByLabel('Email')`
@@ -379,9 +391,13 @@ Common mismatches:
 Your app has more than one button matching the pattern `/sign in|log in/i` (e.g. a nav button and the form submit button).
 
 Use a more specific selector:
+
 ```ts
 // Scope to the form
-await page.getByRole('form').getByRole('button', { name: /sign in/i }).click();
+await page
+  .getByRole('form')
+  .getByRole('button', { name: /sign in/i })
+  .click();
 
 // Or use exact match
 await page.getByRole('button', { name: 'Sign in', exact: true }).click();
@@ -399,6 +415,7 @@ The login succeeded visually but `waitForURL` pattern does not match what the ap
 1. In headed mode, watch the browser URL bar after clicking login
 2. Copy the exact URL (e.g. `https://your-app.com/projects/123/overview`)
 3. Update `waitForURL` in `auth.setup.ts` to match:
+
    ```ts
    // Glob pattern — matches any path after the domain
    await page.waitForURL('**/projects/**', { timeout: 30_000 });
@@ -417,11 +434,13 @@ The login succeeded visually but `waitForURL` pattern does not match what the ap
 The `storageState` was saved but is not being loaded correctly.
 
 Check:
+
 - `auth/admin.storage.json` and `auth/user.storage.json` exist (if not, auth setup did not actually save them)
 - The files are not empty — open one and confirm it contains cookies/localStorage data
 - Your app uses a different domain in staging vs local — `storageState` cookies are domain-scoped; if `BASE_URL` changed since you ran auth setup, re-run auth setup
 
 Re-run auth setup fresh:
+
 ```bash
 npm run clean          # deletes auth/*.storage.json
 npx playwright test src/tests/auth.setup.ts --project=setup
@@ -440,6 +459,7 @@ npx playwright test src/tests/auth.setup.ts --project=setup
 **`storageState` expires mid-run and tests start failing after some time**
 
 Your app's session tokens have a short expiry (e.g. 15 minutes). Options:
+
 - Use test accounts with longer session duration / "remember me" enabled
 - Add a `beforeEach` hook in affected specs that re-navigates to trigger a token refresh
 - Re-run auth setup as part of CI before every test run (already the default in the CI workflow)

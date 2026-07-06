@@ -10,7 +10,7 @@ A production-ready Playwright + TypeScript E2E automation template. Clone this r
 - **HTTP client** — ky-based client with retry, bearer token injection, and structured errors
 - **Utilities** — logger (pino), retry with exponential backoff, unique test data generators
 - **CI/CD** — GitHub Actions pipeline with Slack failure notifications
-- **Code quality** — ESLint (Playwright rules + TypeScript), Prettier, Husky pre-commit hooks, grep-bans
+- **Code quality** — ESLint (Playwright rules + TypeScript), Prettier, Husky pre-commit hook (lint-staged + grep-bans), and the same gates enforced in CI
 
 ## Quick start
 
@@ -59,29 +59,33 @@ npm run codegen       # opens browser as logged-in user
 
 ## Available scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm test` | Run all tests |
-| `npm run test:smoke` | Smoke tests only |
-| `npm run test:regression` | Regression tests only |
-| `npm run test:ci` | CI subset (smoke + regression) |
-| `npm run test:ui` | Open Playwright UI mode |
-| `npm run codegen` | Record a flow as logged-in user |
-| `npm run codegen:admin` | Record a flow as admin |
-| `npm run codegen:public` | Record a flow without auth |
-| `npm run report` | Open last HTML report |
-| `npm run lint` | Run ESLint |
-| `npm run typecheck` | TypeScript type check |
+| Script                    | Description                                     |
+| ------------------------- | ----------------------------------------------- |
+| `npm test`                | Run all tests                                   |
+| `npm run test:smoke`      | Smoke tests only                                |
+| `npm run test:regression` | Regression tests only                           |
+| `npm run test:ci`         | CI subset (smoke + regression)                  |
+| `npm run test:ui`         | Open Playwright UI mode                         |
+| `npm run codegen`         | Record a flow as logged-in user                 |
+| `npm run codegen:admin`   | Record a flow as admin                          |
+| `npm run codegen:public`  | Record a flow without auth                      |
+| `npm run report`          | Open last HTML report                           |
+| `npm run lint`            | Run ESLint                                      |
+| `npm run typecheck`       | TypeScript type check                           |
+| `npm run lint:no-sleeps`  | Check banned patterns (sleeps, hardcoded creds) |
+| `npm run format:check`    | Verify Prettier formatting                      |
 
 ## CI/CD
 
-The GitHub Actions workflow (`.github/workflows/ci.yml`) runs on push to `main`, pull requests, and daily at 2 AM UTC.
+The GitHub Actions workflow (`.github/workflows/ci.yml`) runs on push to `main`, pull requests, and daily at 2 AM UTC. Quality gates (lint, typecheck, grep-bans) run first — the E2E tests only run if they pass.
 
 Required GitHub secrets:
+
 - `BASE_URL`, `API_URL`
 - `ADMIN_EMAIL`, `ADMIN_PASSWORD`
 - `USER_EMAIL`, `USER_PASSWORD`
 - `SLACK_WEBHOOK_URL` (optional — for failure notifications)
 
 Optional GitHub variable:
+
 - `PROJECT_NAME` — displayed in Slack alerts (default: "E2E")

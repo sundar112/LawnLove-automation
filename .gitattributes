@@ -1,0 +1,12 @@
+# Normalize all text files to LF in the repo AND the working tree,
+# so Prettier's endOfLine=lf check passes on Windows (overrides core.autocrlf).
+* text=auto eol=lf
+
+# Binary files — never touch line endings
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.zip binary

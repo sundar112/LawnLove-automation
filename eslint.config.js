@@ -13,6 +13,8 @@ export default tseslint.config(
       'build/**',
       '.husky/**',
       'package-lock.json',
+      // Codegen landing zone — overwritten by every recording, never committed.
+      'scripts/recorded-flow.ts',
     ],
   },
   ...tseslint.configs.recommendedTypeChecked,
@@ -36,8 +38,7 @@ export default tseslint.config(
         'error',
         {
           selector: "CallExpression[callee.property.name='waitForTimeout']",
-          message:
-            'page.waitForTimeout() is banned. Use auto-retrying expect() locators instead.',
+          message: 'page.waitForTimeout() is banned. Use auto-retrying expect() locators instead.',
         },
         {
           selector: "CallExpression[callee.name='setTimeout']",
@@ -66,7 +67,9 @@ export default tseslint.config(
       'playwright/expect-expect': [
         'error',
         {
-          assertFunctionNames: ['expect', 'expect*', '*.expect*'],
+          // Page-object assertion helpers count as assertions:
+          // expectUrl, expectToast, expectSuccessBanner, waitForLoaded, ...
+          assertFunctionPatterns: ['^expect', '^waitForLoaded$'],
         },
       ],
       'playwright/no-conditional-in-test': 'warn',

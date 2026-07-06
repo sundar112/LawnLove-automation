@@ -2,9 +2,9 @@ name: E2E Tests
 
 on:
   push:
-    branches: [main]
+    branches: [master, develop]
   pull_request:
-    branches: [main]
+    branches: [master, develop]
   schedule:
     - cron: '0 2 * * *' # 2:00 AM UTC every day
   workflow_dispatch: # lets you trigger manually from GitHub UI anytime
@@ -51,6 +51,15 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Check banned patterns (no sleeps, no hardcoded creds)
+        run: npm run lint:no-sleeps
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
