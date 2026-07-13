@@ -31,7 +31,8 @@ The user will trigger this by saying things like:
 
 - Auth via storageState — never UI login inside tests (`auth/<role>.storage.json`)
 - Zero sleeps — no `waitForTimeout`, use `waitForURL`, `waitForSelector`, `expect().toBeVisible()` instead
-- Test tags: `@smoke` (happy path, fast), `@regression` (full flow end-to-end), `@as-user` / `@as-admin` / `@as-public`
+- Test tags: `@smoke` (happy path, fast), `@regression` (full flow end-to-end), `@as-user` / `@as-admin` / `@as-public`,
+  `@chromium-only` (skip firefox/webkit — for flows with real side effects, e.g. signup creates a user + email per run)
 - Each new spec gets 4 matching scripts in `package.json`: `test:<feature>`, `test:<feature>:headed`, `test:<feature>:smoke`, `test:<feature>:regression`
 - Shared setup goes in a `goTo<Feature>Page(page: Page)` helper at the top of the spec file
 - Page-object assertion helpers must be named `expect*` (e.g. `expectUrl`, `expectToast`) — the
@@ -68,6 +69,10 @@ add a persona in `src/fixtures/personas.ts`, and add a project in `playwright.co
 - Radix Accordion `type="single"` keeps ALL panels in DOM (CSS hidden) — causes strict-mode violations on shared placeholders; use unique per-item selectors or scope to the open panel
 - `getByPlaceholder('Email')` partially matches `"Email address"` — always add `{ exact: true }` for short placeholder strings
 - Calendar nav buttons often use `aria-label` with specific capitalisation — record to find the exact string
+- Gmail's IMAP SEARCH does not reliably match `+` aliases — `src/utils/email.ts` matches To headers
+  client-side via envelope fetch instead. Never switch it back to `client.search({ to })`
+- `getByRole('link', { name: 'Sign up' })` substring-matches the navbar "Log in / Sign up" link —
+  use `{ exact: true }` (role-name matching is substring by default)
 
 ## File Structure
 
@@ -83,8 +88,11 @@ src/
   tests/
     auth.setup.ts             Auth bootstrap (runs before role projects)
     <feature>.spec.ts         One spec file per feature
-  utils/         locators, logger, retry, time, unique
+  utils/         locators, logger, retry, time, unique, email (IMAP verification-link fetcher)
 scripts/
-  recorded-flow.ts  Codegen output (overwritten each run, not committed)
-  grep-bans.mjs     Static analysis for banned patterns
+  recorded-flow.ts     Codegen output (overwritten each run, not committed)
+  codegen.mjs          Codegen launcher — opens BASE_URL from .env with role storage state
+  grep-bans.mjs        Static analysis for banned patterns
+  check-imap.ts        Debug gate: proves Gmail IMAP auth works
+  check-email-flow.ts  Debug gate: proves the verification-email fetch (optional address arg)
 ```

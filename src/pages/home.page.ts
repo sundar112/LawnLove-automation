@@ -131,6 +131,10 @@ export class HomePage extends BasePage {
     await this.navLink(name).click();
   }
 
+  async clickLoginSignup(): Promise<void> {
+    await this.loginSignupLink.click();
+  }
+
   /** The reviews section sits below the fold; bring it into the viewport first. */
   async scrollToReviews(): Promise<void> {
     await this.reviewsSection.scrollIntoViewIfNeeded();
@@ -269,7 +273,7 @@ export class HomePage extends BasePage {
       this.ctaSection.getByRole('heading', { name: 'Your Lawn Deserves Professional Care' }),
     ).toBeVisible();
     await expect(this.ctaSignUpLink).toBeVisible();
-    await expect(this.ctaSignUpLink).toHaveAttribute('href', '#signup');
+    await expect(this.ctaSignUpLink).toHaveAttribute('href', '/signup');
     await expect(this.ctaQuoteLink).toBeVisible();
     await expect(this.ctaQuoteLink).toHaveAttribute('href', '#quote');
   }

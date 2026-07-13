@@ -93,6 +93,7 @@ export default defineConfig({
       name: 'firefox-public',
       testIgnore: /auth\.setup\.ts/,
       grep: /@as-public\b/,
+      grepInvert: /@chromium-only\b/,
       use: {
         ...devices['Desktop Firefox'],
       },
@@ -101,6 +102,7 @@ export default defineConfig({
       name: 'webkit-public',
       testIgnore: /auth\.setup\.ts/,
       grep: /@as-public\b/,
+      grepInvert: /@chromium-only\b/,
       use: {
         ...devices['Desktop Safari'],
       },
