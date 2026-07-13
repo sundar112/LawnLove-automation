@@ -1,6 +1,9 @@
 import { expect, type Locator } from '@playwright/test';
 import { BasePage } from './base.page';
 
+const NAME_POLICY_ERROR = 'Name must contain only letters and spaces (2-100 characters).';
+const DUPLICATE_EMAIL_ERROR = 'An account with this email already exists. Please sign in instead.';
+
 export class SignupPage extends BasePage {
   protected readonly path = '/signup';
 
@@ -11,13 +14,40 @@ export class SignupPage extends BasePage {
   private readonly signUpButton = this.page.getByRole('button', { name: 'Sign up', exact: true });
   /** Shown on the check-your-email screen after a successful submit. */
   private readonly openEmailLink = this.page.getByRole('link', { name: 'Open Email' });
+  private readonly signInLink = this.page.getByRole('link', { name: 'Sign in', exact: true });
+  /** Inline validation error rendered inside the Full Name field group. */
+  private readonly nameError = this.page.getByRole('alert').filter({ hasText: /name/i });
+  private readonly duplicateEmailError = this.page.getByText(DUPLICATE_EMAIL_ERROR);
+  private readonly termsNotice = this.page.getByText('By continuing, you agree');
+  private readonly termsLink = this.page.getByRole('link', { name: 'Terms and Privacy' });
+
+  // ── Actions ─────────────────────────────────────────────────────────────
+  /** Fills and blurs — the form runs field validation on blur. */
+  async fillFullName(value: string): Promise<void> {
+    await this.fullNameInput.fill(value);
+    await this.fullNameInput.blur();
+  }
+
+  async fillEmail(value: string): Promise<void> {
+    await this.emailInput.fill(value);
+    await this.emailInput.blur();
+  }
 
   async signUp(fullName: string, email: string): Promise<void> {
-    await this.fullNameInput.fill(fullName);
-    await this.emailInput.fill(email);
+    await this.fillFullName(fullName);
+    await this.fillEmail(email);
     await this.signUpButton.click();
   }
 
+  async submitWithEnter(): Promise<void> {
+    await this.emailInput.press('Enter');
+  }
+
+  async clickSignInLink(): Promise<void> {
+    await this.signInLink.click();
+  }
+
+  // ── Assertions ──────────────────────────────────────────────────────────
   async expectFormVisible(): Promise<void> {
     await expect(this.fullNameInput).toBeVisible();
     await expect(this.emailInput).toBeVisible();
@@ -26,6 +56,29 @@ export class SignupPage extends BasePage {
 
   async expectCheckEmailScreen(): Promise<void> {
     await expect(this.openEmailLink).toBeVisible();
+  }
+
+  /** The form gates invalid input by disabling the submit button. */
+  async expectSubmitDisabled(): Promise<void> {
+    await expect(this.signUpButton).toBeDisabled();
+  }
+
+  async expectSubmitEnabled(): Promise<void> {
+    await expect(this.signUpButton).toBeEnabled();
+  }
+
+  async expectNameError(): Promise<void> {
+    await expect(this.nameError).toHaveText(NAME_POLICY_ERROR);
+  }
+
+  async expectDuplicateEmailError(): Promise<void> {
+    await expect(this.duplicateEmailError).toBeVisible();
+  }
+
+  /** Terms are auto-accepted on continue — there is no checkbox by design. */
+  async expectTermsNotice(): Promise<void> {
+    await expect(this.termsNotice).toBeVisible();
+    await expect(this.termsLink).toBeVisible();
   }
 }
 

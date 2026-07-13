@@ -1,4 +1,5 @@
 import { test, type Page } from '@playwright/test';
+import { env } from '../config/env';
 import { HomePage } from '../pages/home.page';
 import { LoginPage } from '../pages/login.page';
 import { SetPasswordPage, SignupPage } from '../pages/signup.page';
@@ -6,6 +7,8 @@ import { freshEmail, getVerificationLink } from '../utils/email';
 import { testRunId } from '../utils/unique';
 
 const FULL_NAME = 'Automation Test';
+
+const INVALID_EMAILS = ['anit@', 'anitsharma@gmailcom', 'plainaddress'];
 
 async function goToSignupPage(page: Page): Promise<SignupPage> {
   const homePage = new HomePage(page);
@@ -34,6 +37,83 @@ test.describe('Signup @chromium-only', () => {
   }) => {
     const signupPage = await goToSignupPage(page);
     await signupPage.signUp(FULL_NAME, freshEmail());
+    await signupPage.expectCheckEmailScreen();
+  });
+
+  // The form gates invalid input by disabling Sign up — there is no
+  // "submit and see errors" path for empty/invalid fields.
+  test('should keep Sign up disabled until the form is complete @regression @as-public', async ({
+    page,
+  }) => {
+    const signupPage = await goToSignupPage(page);
+    await signupPage.expectSubmitDisabled();
+
+    await signupPage.fillFullName(FULL_NAME);
+    await signupPage.expectSubmitDisabled();
+
+    await signupPage.fillEmail(freshEmail());
+    await signupPage.expectSubmitEnabled();
+  });
+
+  test('should keep Sign up disabled for invalid email formats @regression @as-public', async ({
+    page,
+  }) => {
+    const signupPage = await goToSignupPage(page);
+    await signupPage.fillFullName(FULL_NAME);
+
+    for (const invalidEmail of INVALID_EMAILS) {
+      await signupPage.fillEmail(invalidEmail);
+      await signupPage.expectSubmitDisabled();
+    }
+  });
+
+  test('should show a name error for a whitespace-only name @regression @as-public', async ({
+    page,
+  }) => {
+    const signupPage = await goToSignupPage(page);
+    await signupPage.fillFullName('   ');
+    await signupPage.fillEmail(freshEmail());
+    await signupPage.expectNameError();
+    await signupPage.expectSubmitDisabled();
+  });
+
+  test('should show a name error for special characters @regression @as-public', async ({
+    page,
+  }) => {
+    const signupPage = await goToSignupPage(page);
+    await signupPage.fillFullName('@nit#123$');
+    await signupPage.fillEmail(freshEmail());
+    await signupPage.expectNameError();
+    await signupPage.expectSubmitDisabled();
+  });
+
+  test('should reject an already-registered email @regression @as-public', async ({ page }) => {
+    test.skip(!env.USER_EMAIL, 'USER_EMAIL not configured in .env');
+
+    const signupPage = await goToSignupPage(page);
+    await signupPage.signUp(FULL_NAME, env.USER_EMAIL);
+    await signupPage.expectDuplicateEmailError();
+  });
+
+  test('should navigate to login via the Sign in link @regression @as-public', async ({ page }) => {
+    const signupPage = await goToSignupPage(page);
+    await signupPage.clickSignInLink();
+
+    const loginPage = new LoginPage(page);
+    await loginPage.waitForLoaded();
+    await loginPage.expectUrl(/\/login$/);
+  });
+
+  test('should show the terms auto-accept notice @regression @as-public', async ({ page }) => {
+    const signupPage = await goToSignupPage(page);
+    await signupPage.expectTermsNotice();
+  });
+
+  test('should submit the form with the Enter key @regression @as-public', async ({ page }) => {
+    const signupPage = await goToSignupPage(page);
+    await signupPage.fillFullName(FULL_NAME);
+    await signupPage.fillEmail(freshEmail());
+    await signupPage.submitWithEnter();
     await signupPage.expectCheckEmailScreen();
   });
 
