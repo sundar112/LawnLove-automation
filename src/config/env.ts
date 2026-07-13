@@ -41,6 +41,10 @@ const EnvSchema = z.object({
   ADMIN_EMAIL: z.string().optional().default(''),
   ADMIN_PASSWORD: z.string().optional().default(''),
 
+  /** Dedicated Gmail QA inbox, read over IMAP for email-verification flows. Optional — only signup tests need it. */
+  GMAIL_USER: z.string().optional().default(''),
+  GMAIL_APP_PASSWORD: z.string().optional().default(''),
+
   HEADLESS: boolean,
   SLOW_MO: positiveInt,
   WORKERS: positiveInt,
