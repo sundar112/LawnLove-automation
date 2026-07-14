@@ -12,6 +12,8 @@ export class SignupPage extends BasePage {
   private readonly fullNameInput = this.page.getByRole('textbox', { name: 'Full Name' });
   private readonly emailInput = this.page.getByRole('textbox', { name: 'Email address' });
   private readonly signUpButton = this.page.getByRole('button', { name: 'Sign up', exact: true });
+  /** While the signup request is in flight the button relabels and disables. */
+  private readonly signingUpButton = this.page.getByRole('button', { name: 'Signing up...' });
   /** Shown on the check-your-email screen after a successful submit. */
   private readonly openEmailLink = this.page.getByRole('link', { name: 'Open Email' });
   private readonly signInLink = this.page.getByRole('link', { name: 'Sign in', exact: true });
@@ -20,6 +22,8 @@ export class SignupPage extends BasePage {
   private readonly duplicateEmailError = this.page.getByText(DUPLICATE_EMAIL_ERROR);
   private readonly termsNotice = this.page.getByText('By continuing, you agree');
   private readonly termsLink = this.page.getByRole('link', { name: 'Terms and Privacy' });
+  /** Generic failure message — shown for 5xx ("…Please try again.") and network errors. */
+  private readonly serverError = this.page.getByText(/Something went wrong/);
 
   // ── Actions ─────────────────────────────────────────────────────────────
   /** Fills and blurs — the form runs field validation on blur. */
@@ -33,10 +37,14 @@ export class SignupPage extends BasePage {
     await this.emailInput.blur();
   }
 
+  async submit(): Promise<void> {
+    await this.signUpButton.click();
+  }
+
   async signUp(fullName: string, email: string): Promise<void> {
     await this.fillFullName(fullName);
     await this.fillEmail(email);
-    await this.signUpButton.click();
+    await this.submit();
   }
 
   async submitWithEnter(): Promise<void> {
@@ -79,6 +87,22 @@ export class SignupPage extends BasePage {
   async expectTermsNotice(): Promise<void> {
     await expect(this.termsNotice).toBeVisible();
     await expect(this.termsLink).toBeVisible();
+  }
+
+  async expectServerError(): Promise<void> {
+    await expect(this.serverError).toBeVisible();
+  }
+
+  /** Loading state: "Signing up..." label shown, button disabled — no double submit. */
+  async expectSubmittingState(): Promise<void> {
+    await expect(this.signingUpButton).toBeVisible();
+    await expect(this.signingUpButton).toBeDisabled();
+  }
+
+  /** No data loss after a failed submit. */
+  async expectFormValues(fullName: string, email: string): Promise<void> {
+    await expect(this.fullNameInput).toHaveValue(fullName);
+    await expect(this.emailInput).toHaveValue(email);
   }
 }
 
