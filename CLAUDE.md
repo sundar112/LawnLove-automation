@@ -73,6 +73,10 @@ add a persona in `src/fixtures/personas.ts`, and add a project in `playwright.co
   client-side via envelope fetch instead. Never switch it back to `client.search({ to })`
 - `getByRole('link', { name: 'Sign up' })` substring-matches the navbar "Log in / Sign up" link —
   use `{ exact: true }` (role-name matching is substring by default)
+- The staging backend rate-limits `/api/auth` bursts (429 "Too many requests") — magic-link opens
+  retry with backoff (`openMagicLink`), signup submits retry in `signUpToCheckEmail`, and the
+  link-consuming set-password tests run serialized in a `mode: 'default'` describe group.
+  Keep new email-consuming tests inside that group
 
 ## File Structure
 
