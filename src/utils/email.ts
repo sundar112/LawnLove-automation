@@ -30,13 +30,15 @@ export const freshEmail = (): string => {
 
 /**
  * Polls the QA inbox over IMAP until an email addressed to `toAddress`
- * arrives, then returns its first link matching LINK_PATTERN.
- * Matches the To header client-side — Gmail's server-side IMAP SEARCH
- * does not reliably match `+` aliases.
+ * arrives, then returns its first link matching `linkPattern` (defaults to
+ * LINK_PATTERN, which fits verification emails — pass /reset-password/i for
+ * password-reset emails). Matches the To header client-side — Gmail's
+ * server-side IMAP SEARCH does not reliably match `+` aliases.
  */
 export const getVerificationLink = async (
   toAddress: string,
   timeoutMs = 90_000,
+  linkPattern: RegExp = LINK_PATTERN,
 ): Promise<string> => {
   requireGmailEnv();
 
@@ -79,9 +81,9 @@ export const getVerificationLink = async (
         const body = parsed.html || parsed.text || '';
 
         const urls = body.match(/https?:\/\/[^\s"'<>)\]]+/g) ?? [];
-        const link = urls.find((u) => LINK_PATTERN.test(u));
+        const link = urls.find((u) => linkPattern.test(u));
         if (!link) {
-          throw new Error(`email for ${toAddress} contains no link matching ${LINK_PATTERN}`);
+          throw new Error(`email for ${toAddress} contains no link matching ${linkPattern}`);
         }
 
         log.info({ toAddress }, 'verification link found');
